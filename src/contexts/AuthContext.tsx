@@ -1,4 +1,21 @@
-import { createContext, ReactNode, useContext } from 'react';
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useState,
+  useEffect,
+} from 'react';
+import Router from 'next/router';
+import { parseCookies } from 'nookies';
+
+import { api } from '../services/api';
+import { setAuthCookies, destroyAuthCookies } from '../utils/auth';
+
+type User = {
+  email: string;
+  permissions: string[];
+  roles: string[];
+};
 
 type SignInCredentials = {
   email: string;
@@ -7,6 +24,7 @@ type SignInCredentials = {
 
 interface AuthContextData {
   signIn(credentials: SignInCredentials): Promise<void>;
+  user?: User;
   isAuthenticated: boolean;
 }
 
@@ -27,14 +45,47 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const isAuthenticated = false;
+  const [user, setUser] = useState<User>();
+  const isAuthenticated = Boolean(user);
 
-  async function signIn({ email, password }: SignInCredentials) {
-    console.log(email, password);
+  useEffect(() => {
+    const { 'nextauth.token': token } = parseCookies();
+
+    if (token) {
+      api
+        .get('/me')
+        .then((response) => {
+          const { email, permissions, roles } = response.data;
+          setUser({ email, permissions, roles });
+        })
+        .catch(() => {
+          destroyAuthCookies();
+          Router.push('/');
+        });
+    }
+  }, []);
+
+  async function signIn(credentials: SignInCredentials) {
+    try {
+      const response = await api.post('sessions', credentials);
+      const { token, refreshToken, permissions, roles } = response.data;
+
+      setAuthCookies(token, refreshToken);
+      setUser({
+        email: credentials.email,
+        permissions,
+        roles,
+      });
+
+      api.defaults.headers['Authorization'] = `Bearer ${token}`;
+      Router.push('/dashboard');
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ signIn, isAuthenticated }}>
+    <AuthContext.Provider value={{ signIn, isAuthenticated, user }}>
       {children}
     </AuthContext.Provider>
   );
