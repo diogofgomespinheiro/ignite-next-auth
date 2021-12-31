@@ -1,6 +1,10 @@
+import { GetServerSideProps } from 'next';
 import { useEffect } from 'react';
+
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+import { api } from '../services/apiClient';
+import { setupApiClient } from '../services/api';
+import { withSSRAuth } from '../utils/hocs/withSSRAuth';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -16,3 +20,14 @@ export default function Dashboard() {
 
   return <h1>{user?.email}</h1>;
 }
+
+export const getServerSideProps: GetServerSideProps = withSSRAuth(
+  async (ctx) => {
+    const apiClient = setupApiClient(ctx);
+    await apiClient.get('/me');
+
+    return {
+      props: {},
+    };
+  }
+);

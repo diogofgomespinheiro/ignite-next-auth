@@ -1,7 +1,8 @@
 import { useState, FormEvent, SyntheticEvent } from 'react';
-import type { NextPage } from 'next';
+import type { GetServerSideProps, NextPage } from 'next';
 
 import { useAuth } from '../contexts/AuthContext';
+import { withSSRGuest } from '../utils/hocs';
 
 interface FormData {
   email: string;
@@ -45,3 +46,11 @@ const Home: NextPage = () => {
 };
 
 export default Home;
+
+export const getServerSideProps: GetServerSideProps = withSSRGuest(
+  async (ctx) => {
+    return {
+      props: {},
+    };
+  }
+);

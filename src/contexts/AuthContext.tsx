@@ -8,7 +8,7 @@ import {
 import Router from 'next/router';
 import { parseCookies } from 'nookies';
 
-import { api } from '../services/api';
+import { api } from '../services/apiClient';
 import { setAuthCookies, destroyAuthCookies } from '../utils/auth';
 
 type User = {
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await api.post('sessions', credentials);
       const { token, refreshToken, permissions, roles } = response.data;
 
-      setAuthCookies(token, refreshToken);
+      setAuthCookies({ token, refreshToken });
       setUser({
         email: credentials.email,
         permissions,
