@@ -1,13 +1,14 @@
 import { GetServerSideProps } from 'next';
 import { useEffect } from 'react';
 
+import { Can } from '../components/Can';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/apiClient';
 import { setupApiClient } from '../services/api';
 import { withSSRAuth } from '../utils/hocs/withSSRAuth';
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     api
@@ -18,7 +19,15 @@ export default function Dashboard() {
       .catch((err) => console.log(err));
   }, []);
 
-  return <h1>{user?.email}</h1>;
+  return (
+    <>
+      <h1>{user?.email}</h1>
+      <button onClick={signOut}>Sign out</button>
+      <Can permissions={['metrics.list']}>
+        <div>Metrics</div>
+      </Can>
+    </>
+  );
 }
 
 export const getServerSideProps: GetServerSideProps = withSSRAuth(
